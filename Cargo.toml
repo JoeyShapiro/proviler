@@ -3,5 +3,13 @@ name = "proviler"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "proviler"
+path = "src/lib.rs"
+
+[[bin]]
+name = "proviler"
+path = "src/main.rs"
+
 [dependencies]
 sysinfo = "0.36.1"

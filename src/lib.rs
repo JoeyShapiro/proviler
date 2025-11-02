@@ -2,26 +2,62 @@ use std::thread;
 use std::time::Duration;
 use sysinfo::System;
 
-pub fn profile(pid: u32, interval: Duration) {
-    let mut sys = System::new_all();
-    let pid = sysinfo::Pid::from_u32(pid);
+pub struct Profiler {
+    pid: sysinfo::Pid,
+    interval: Duration,
+    log: Vec<String>,
+    sys: System,
+}
 
-    // Initial refresh
-    sys.refresh_all();
-
-    loop {
-        thread::sleep(interval);
+impl Profiler {
+    pub fn new(pid: u32, interval: Duration, capacity: usize) -> Self {
+        let mut sys = System::new_all();
         sys.refresh_all();
 
-        if let Some(process) = sys.process(pid) {
-            println!(
-                "CPU: {:.2}%, Memory: {} MB",
+        Profiler {
+            pid: sysinfo::Pid::from_u32(pid),
+            interval,
+            log: Vec::with_capacity(capacity),
+            sys,
+        }
+    }
+
+    pub fn start(&mut self) {
+        // Initial refresh
+        self.sys.refresh_all();
+
+        loop {
+            match self.step() {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    break;
+                }
+            }
+        }
+    }
+
+    pub fn pause(&self) {}
+
+    pub fn step(&mut self) -> Result<(), &'static str> {
+        thread::sleep(self.interval);
+        self.sys.refresh_all();
+
+        if let Some(process) = self.sys.process(self.pid) {
+            let message = format!(
+                "{:.2} {}",
                 process.cpu_usage(),
                 process.virtual_memory() / 1024 / 1024 / 1024
             );
+
+            if self.log.len() == self.log.capacity() {
+                self.log.remove(0);
+            }
+
+            self.log.push(message);
+            Ok(())
         } else {
-            println!("Process not found");
-            break;
+            Err("process not found")
         }
     }
 }
@@ -31,7 +67,5 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        profile(60774, Duration::from_secs(1));
-    }
+    fn it_works() {}
 }

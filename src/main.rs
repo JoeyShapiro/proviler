@@ -38,9 +38,9 @@ fn main() {
     let now = std::time::SystemTime::now;
 
     if flags.header {
-        print!("timestamp_ms cpu_usage vmem");
+        print!("timestamp_ms cpu_usage mem");
         if flags.human {
-            print!("(human)");
+            print!(" mem_units");
         }
         println!();
     }
@@ -53,11 +53,11 @@ fn main() {
             let vmem = if flags.human {
                 let vmem_mr = process.memory(); // virtual_memory
                 if vmem_mr >= 1 << 30 {
-                    format!("{:.2} GB", vmem_mr as f64 / (1 << 30) as f64)
+                    format!("{:.2} GiB", vmem_mr as f64 / (1 << 30) as f64)
                 } else if vmem_mr >= 1 << 20 {
-                    format!("{:.2} MB", vmem_mr as f64 / (1 << 20) as f64)
+                    format!("{:.2} MiB", vmem_mr as f64 / (1 << 20) as f64)
                 } else if vmem_mr >= 1 << 10 {
-                    format!("{:.2} KB", vmem_mr as f64 / (1 << 10) as f64)
+                    format!("{:.2} KiB", vmem_mr as f64 / (1 << 10) as f64)
                 } else {
                     format!("{} B", vmem_mr)
                 }

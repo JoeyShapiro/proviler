@@ -40,6 +40,7 @@ fn main() {
     let pid = sysinfo::Pid::from_u32(flags.pid);
     let now = std::time::SystemTime::now;
     let mut paused = false;
+    let mut step = false;
 
     if flags.header {
         print!("timestamp_ms cpu_usage mem");
@@ -58,7 +59,7 @@ fn main() {
             if let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
                 match code {
                     KeyCode::Char('q') => break,
-                    KeyCode::Char('p') => { 
+                    KeyCode::Char(' ') => { 
                         paused = !paused; 
                         if flags.verbose {
                             if paused {
@@ -68,16 +69,18 @@ fn main() {
                             }
                         }
                     }
+                    KeyCode::Char('s') => step = true,
                     KeyCode::Char(ch) => println!("unknown command: '{}'\r", ch),
                     _ => {}
                 }
             }
         }
 
-        if lasttime.elapsed() < interval || paused {
+        if lasttime.elapsed() < interval || (paused && !step) {
             continue;
         }
         lasttime = Instant::now();
+        step = false;
 
         sys.refresh_all();
 

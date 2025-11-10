@@ -17,7 +17,16 @@
         "command": "proviler.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "views": {
+      "debug": [
+        {
+          "id": "proviler",
+          "name": "Profiler",
+          "icon": "resources/profiler.svg"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

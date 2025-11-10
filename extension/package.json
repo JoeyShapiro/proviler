@@ -21,6 +21,7 @@
     "views": {
       "debug": [
         {
+          "type": "webview",
           "id": "proviler",
           "name": "Profiler",
           "icon": "resources/profiler.svg"

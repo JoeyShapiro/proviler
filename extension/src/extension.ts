@@ -1,25 +1,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as pty from 'node-pty';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "proviler" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('proviler.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from proviler!');
-	});
-
-	context.subscriptions.push(disposable);
 
 	const provider = new CanvasViewProvider(context.extensionUri);
 
@@ -29,6 +15,26 @@ export function activate(context: vscode.ExtensionContext) {
             provider
         )
     );
+
+	const ptyProcess = pty.spawn('/Users/oniichan/Documents/Code/proviler/target/release/proviler', ['-u', '-p', '12345'], {
+        name: 'xterm-color',
+        cols: 80,
+        rows: 30,
+        cwd: vscode.workspace.rootPath || process.cwd(),
+        env: process.env
+    });
+
+    ptyProcess.onData((data) => {
+        console.log(data);
+    });
+
+    ptyProcess.onExit(({ exitCode, signal }) => {
+        console.log(`Process exited with code ${exitCode}`);
+    });
+
+	// Use the console to output diagnostic information (console.log) and errors (console.error)
+	// This line of code will only be executed once when your extension is activated
+	console.log('Congratulations, your extension "proviler" is now active!');
 }
 
 // This method is called when your extension is deactivated
@@ -62,6 +68,7 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
+		// TODO https://github.com/leeoniya/uPlot?tab=readme-ov-file#performance
         return `<!DOCTYPE html>
         <html lang="en">
         <head>
@@ -117,7 +124,7 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 					data: {
 						labels: ['January', 'February', 'March', 'April', 'May', 'June'],
 						datasets: [{
-							label: 'Sales',
+							label: 'CPU Usage (%)',
 							data: [12, 19, 3, 5, 2, 3],
 							borderColor: 'rgb(75, 192, 192)',
 							backgroundColor: 'rgba(75, 192, 192, 0.2)',

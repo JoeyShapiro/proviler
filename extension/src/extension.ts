@@ -6,7 +6,6 @@ import * as pty from 'node-pty';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
 	const provider = new CanvasViewProvider(context.extensionUri);
 
     context.subscriptions.push(
@@ -14,6 +13,40 @@ export function activate(context: vscode.ExtensionContext) {
             CanvasViewProvider.viewType,
             provider
         )
+    );
+
+	// debugger hooks
+    // Before debug session starts (can modify configuration)
+    context.subscriptions.push(
+        vscode.debug.onDidStartDebugSession((session) => {
+            console.log('Started:', session.name);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.debug.onDidTerminateDebugSession((session) => {
+            console.log('Terminated:', session.name);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.debug.onDidChangeActiveDebugSession((session) => {
+            console.log('Active session changed:', session?.name);
+        })
+    );
+
+    // When breakpoints change
+    context.subscriptions.push(
+        vscode.debug.onDidChangeBreakpoints((event) => {
+            console.log('Breakpoints changed:', event);
+        })
+    );
+
+	// Register a debug adapter tracker factory
+    const trackerFactory = new GoDebugAdapterTrackerFactory();
+    
+    context.subscriptions.push(
+        vscode.debug.registerDebugAdapterTrackerFactory('go', trackerFactory)
     );
 
 	const ptyProcess = pty.spawn('/Users/oniichan/Documents/Code/proviler/target/release/proviler', ['-u', '-p', '12345'], {
@@ -35,6 +68,42 @@ export function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "proviler" is now active!');
+}
+
+class GoDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory {
+    createDebugAdapterTracker(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterTracker> {
+        return new GoDebugAdapterTracker();
+    }
+}
+
+class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
+    onDidSendMessage(message: any): void {
+        // Check for stopped event
+        if (message.type === 'event') {
+			switch (message.event) {
+				case 'stopped':
+					this.onPause(message.body);
+					break;
+				case 'continued':
+					this.onResume(message.body);
+					break;
+				default:
+					break;
+			}
+        }
+    }
+
+    private onPause(body: any): void {
+        const reason = body.reason; // 'breakpoint', 'step', 'pause', etc.
+        const threadId = body.threadId;
+        
+        console.log(`Paused - Reason: ${reason}, Thread: ${threadId}`);
+    }
+
+    private onResume(body: any): void {
+		// TODO diff between step and continue. there is a difference. maybe
+        console.log('Resumed execution', body);
+    }
 }
 
 // This method is called when your extension is deactivated

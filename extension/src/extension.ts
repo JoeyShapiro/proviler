@@ -3,6 +3,21 @@
 import * as vscode from 'vscode';
 import * as pty from 'node-pty';
 
+class State {
+	name: string;
+	pid: number;
+	paused: boolean;
+	process: pty.IPty | null = null;
+
+	constructor(name: string, pid: number, paused: boolean) {
+		this.name = name;
+		this.pid = pid;
+		this.paused = paused;
+	}
+}
+
+var state = new State('', 0, false);
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -19,26 +34,42 @@ export function activate(context: vscode.ExtensionContext) {
     // Before debug session starts (can modify configuration)
     context.subscriptions.push(
         vscode.debug.onDidStartDebugSession((session) => {
-            console.log('Started:', session.name);
+            console.debug('Started:', session);
+
+			state.process = pty.spawn('/Users/oniichan/Documents/Code/proviler/target/release/proviler', ['-u', '-p', String(state.pid)], {
+				name: 'xterm-color',
+				cols: 80,
+				rows: 30,
+				cwd: vscode.workspace.rootPath || process.cwd(),
+				env: process.env
+			});
+
+			state.process.onData((data) => {
+				console.log(data);
+			});
+
+			state.process.onExit(({ exitCode, signal }) => {
+				console.log(`Process exited with code ${exitCode}`);
+			});
         })
     );
 
     context.subscriptions.push(
         vscode.debug.onDidTerminateDebugSession((session) => {
-            console.log('Terminated:', session.name);
+            console.debug('Terminated:', session.name);
+			if (state.process) {
+				state.process.write('q'); // send quit command
+				state.process.kill();
+				state.process = null;
+			}
+
+			state = new State('', 0, false);
         })
     );
 
     context.subscriptions.push(
         vscode.debug.onDidChangeActiveDebugSession((session) => {
-            console.log('Active session changed:', session?.name);
-        })
-    );
-
-    // When breakpoints change
-    context.subscriptions.push(
-        vscode.debug.onDidChangeBreakpoints((event) => {
-            console.log('Breakpoints changed:', event);
+            console.warn('Active session changed:', session?.name);
         })
     );
 
@@ -48,22 +79,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.debug.registerDebugAdapterTrackerFactory('go', trackerFactory)
     );
-
-	const ptyProcess = pty.spawn('/Users/oniichan/Documents/Code/proviler/target/release/proviler', ['-u', '-p', '12345'], {
-        name: 'xterm-color',
-        cols: 80,
-        rows: 30,
-        cwd: vscode.workspace.rootPath || process.cwd(),
-        env: process.env
-    });
-
-    ptyProcess.onData((data) => {
-        console.log(data);
-    });
-
-    ptyProcess.onExit(({ exitCode, signal }) => {
-        console.log(`Process exited with code ${exitCode}`);
-    });
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -87,22 +102,29 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 				case 'continued':
 					this.onResume(message.body);
 					break;
+				case 'process':
+					this.onProcess(message.body);
+					break;
 				default:
 					break;
 			}
         }
     }
 
+	private onProcess(body: any): void {
+		console.debug(`Process - Name: ${body.name}, System ID: ${body.systemProcessId}`);
+		state.name = body.name;
+		state.pid = body.systemProcessId;
+	}
+
     private onPause(body: any): void {
-        const reason = body.reason; // 'breakpoint', 'step', 'pause', etc.
-        const threadId = body.threadId;
-        
-        console.log(`Paused - Reason: ${reason}, Thread: ${threadId}`);
+		console.debug(`Paused - Reason: ${body.reason}, Thread: ${body.threadId}`);
+		state.paused = true;
     }
 
     private onResume(body: any): void {
-		// TODO diff between step and continue. there is a difference. maybe
-        console.log('Resumed execution', body);
+        console.debug('Resumed execution', body);
+		state.paused = false;
     }
 }
 

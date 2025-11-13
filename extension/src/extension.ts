@@ -8,11 +8,32 @@ class State {
 	pid: number;
 	paused: boolean;
 	process: pty.IPty | null = null;
+	usageLog: Usage[] = [];
 
 	constructor(name: string, pid: number, paused: boolean) {
 		this.name = name;
 		this.pid = pid;
 		this.paused = paused;
+	}
+
+	log(timestamp: number, cpu: number, memory: number) {
+		this.usageLog.push(new Usage(timestamp, cpu, memory));
+
+		if (this.usageLog.length > 10) {
+			this.usageLog.shift();
+		}
+	}
+}
+
+class Usage {
+	timestamp: number = 0;
+	cpu: number = 0;
+	memory: number = 0;
+
+	constructor(timestamp: number, cpu: number, memory: number) {
+		this.timestamp = timestamp;
+		this.cpu = cpu;
+		this.memory = memory;
 	}
 }
 
@@ -45,6 +66,12 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 
 			state.process.onData((data) => {
+				let cols = data.split(' ');
+				if (cols.length < 3) {
+					return;
+				}
+
+				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
 				console.log(data);
 			});
 
@@ -120,11 +147,13 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
     private onPause(body: any): void {
 		console.debug(`Paused - Reason: ${body.reason}, Thread: ${body.threadId}`);
 		state.paused = true;
+		state.process?.write(' ');
     }
 
     private onResume(body: any): void {
         console.debug('Resumed execution', body);
 		state.paused = false;
+		state.process?.write(' ');
     }
 }
 

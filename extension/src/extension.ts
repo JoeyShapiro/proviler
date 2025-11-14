@@ -72,12 +72,9 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
-				console.log(data);
 			});
 
-			state.process.onExit(({ exitCode, signal }) => {
-				console.log(`Process exited with code ${exitCode}`);
-			});
+			state.process.onExit(({ exitCode, signal }) => {});
         })
     );
 
@@ -183,6 +180,9 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                 case 'canvasClick':
                     vscode.window.showInformationMessage(`Clicked at ${data.x}, ${data.y}`);
                     break;
+				default:
+					console.log('Unknown message type:', data);
+					break;
             }
         });
     }
@@ -196,10 +196,10 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <style>
-                body {
+                html, body {
                     padding: 0;
                     margin: 0;
-                    overflow: hidden;
+					height: 100%;
                 }
                 canvas {
                     display: block;
@@ -215,19 +215,6 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                 const canvas = document.getElementById('myCanvas');
                 const ctx = canvas.getContext('2d');
 
-                // Resize canvas to fill the view
-                function resizeCanvas() {
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = canvas.offsetHeight;
-                    draw();
-                }
-
-                function draw() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = '#007acc';
-                    ctx.fillRect(10, 10, 100, 100);
-                }
-
                 canvas.addEventListener('click', (e) => {
                     vscode.postMessage({
                         type: 'canvasClick',
@@ -235,9 +222,6 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                         y: e.offsetY
                     });
                 });
-
-                window.addEventListener('resize', resizeCanvas);
-                resizeCanvas();
 
 				new Chart(canvas, {
 					type: 'line',
@@ -252,11 +236,12 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 						}]
 					},
 					options: {
+						maintainAspectRatio: false,
 						responsive: true,
 						plugins: {
 							title: {
 								display: true,
-								text: 'Monthly Sales Data'
+								text: '${state.name}'
 							}
 						},
 						scales: {

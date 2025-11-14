@@ -74,7 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
-				// TODO good for now, but maybe only send new stuff
 				provider!.post({ command: 'update', cpu: state.usageLog.map(u => u.cpu), memory: state.usageLog.map(u => u.memory)});
 			});
 
@@ -255,6 +254,7 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                         case 'update':
 							chart.data.labels = message.cpu.map((_, i) => i + 1);
 							chart.data.datasets[0].data = message.cpu;
+							chart.update();
                             break;
                     }
                 });

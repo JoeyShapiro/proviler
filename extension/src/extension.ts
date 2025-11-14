@@ -38,11 +38,12 @@ class Usage {
 }
 
 var state = new State('', 0, false);
+var provider: CanvasViewProvider | null = null;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	const provider = new CanvasViewProvider(context.extensionUri);
+	provider = new CanvasViewProvider(context.extensionUri);
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
@@ -65,6 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 				env: process.env
 			});
 
+			// TODO paused doesnt seem to work rght. still doesnt update properly
 			state.process.onData((data) => {
 				let cols = data.split(' ');
 				if (cols.length < 3) {
@@ -72,6 +74,8 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
+				// TODO good for now, but maybe only send new stuff
+				provider!.post({ command: 'update', cpu: state.usageLog.map(u => u.cpu), memory: state.usageLog.map(u => u.memory)});
 			});
 
 			state.process.onExit(({ exitCode, signal }) => {});
@@ -159,6 +163,7 @@ export function deactivate() {}
 
 export class CanvasViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'proviler';
+    private _webviewView?: vscode.WebviewView;
 
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -173,19 +178,16 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
         };
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-        // Handle messages from the webview
-        webviewView.webview.onDidReceiveMessage(data => {
-            switch (data.type) {
-                case 'canvasClick':
-                    vscode.window.showInformationMessage(`Clicked at ${data.x}, ${data.y}`);
-                    break;
-				default:
-					console.log('Unknown message type:', data);
-					break;
-            }
-        });
+		this._webviewView = webviewView;
     }
+
+	public post(message: any) {
+		if (!this._webviewView) {
+			return;
+		}
+
+		this._webviewView.webview.postMessage(message);
+	}
 
     private _getHtmlForWebview(webview: vscode.Webview) {
 		// TODO https://github.com/leeoniya/uPlot?tab=readme-ov-file#performance
@@ -214,22 +216,16 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                 const vscode = acquireVsCodeApi();
                 const canvas = document.getElementById('myCanvas');
                 const ctx = canvas.getContext('2d');
+				const cpu = [];
+				const memory = [];
 
-                canvas.addEventListener('click', (e) => {
-                    vscode.postMessage({
-                        type: 'canvasClick',
-                        x: e.offsetX,
-                        y: e.offsetY
-                    });
-                });
-
-				new Chart(canvas, {
+				let chart = new Chart(canvas, {
 					type: 'line',
 					data: {
-						labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+						labels: [],
 						datasets: [{
 							label: 'CPU Usage (%)',
-							data: [12, 19, 3, 5, 2, 3],
+							data: cpu,
 							borderColor: 'rgb(75, 192, 192)',
 							backgroundColor: 'rgba(75, 192, 192, 0.2)',
 							tension: 0.1
@@ -251,6 +247,17 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 						}
 					}
 				});
+
+				window.addEventListener('message', event => {
+                    const message = event.data;
+
+                    switch (message.command) {
+                        case 'update':
+							chart.data.labels = message.cpu.map((_, i) => i + 1);
+							chart.data.datasets[0].data = message.cpu;
+                            break;
+                    }
+                });
             </script>
         </body>
         </html>`;

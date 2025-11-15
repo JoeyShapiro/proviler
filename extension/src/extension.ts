@@ -76,6 +76,8 @@ export function activate(context: vscode.ExtensionContext) {
 				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
 				provider!.post({
 					command: 'update',
+					name: state.name,
+					pid: state.pid,
 					labels: state.usageLog.map(u => (u.timestamp - state.startedAt)/1000),
 					cpu: state.usageLog.map(u => u.cpu),
 					memory: state.usageLog.map(u => u.memory)
@@ -125,7 +127,6 @@ class GoDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory 
 
 class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
     onDidSendMessage(message: any): void {
-		console.log('Sent message:', message);
         // Check for stopped event
         if (message.type === 'event') {
 			switch (message.event) {
@@ -151,10 +152,6 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 			}
 		}
     }
-
-	onWillReceiveMessage(message: any): void {
-		console.debug('Will receive message:', message);
-	}
 
 	private onProcess(body: any): void {
 		console.debug(`Process - Name: ${body.name}, System ID: ${body.systemProcessId}`);
@@ -235,8 +232,15 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 
                 div {
                     width: 100%;
-                    height: 50%;
+                    height: 45%;
                 }
+				
+				p {
+					text-align: center;
+					padding: 1px;
+					margin: 0;
+					font-size: small;
+				}
 
                 canvas {
                     display: block;
@@ -246,6 +250,7 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
             </style>
         </head>
         <body>
+			<p id="name"></p>
             <div><canvas id="canvasCpu"></canvas></div>
             <div><canvas id="canvasMem"></canvas></div>
             <script>
@@ -256,12 +261,6 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 				const options = {
 					maintainAspectRatio: false,
 					responsive: true,
-					plugins: {
-						title: {
-							display: true,
-							text: '${state.name}'
-						}
-					},
 					scales: {
 						y: {
 							beginAtZero: true
@@ -304,6 +303,8 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 
                     switch (message.command) {
                         case 'update':
+							document.getElementById('name').textContent = message.pid;
+
 							chartCpu.data.labels = message.labels;
 							chartCpu.data.datasets[0].data = message.cpu;
 							chartCpu.update();

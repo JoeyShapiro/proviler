@@ -233,6 +233,7 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                 div {
                     width: 100%;
                     height: 45%;
+					min-height: 120px;
                 }
 				
 				p {

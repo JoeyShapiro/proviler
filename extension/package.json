@@ -9,6 +9,10 @@
   "categories": [
     "Other"
   ],
+  "files": [
+    "out/**",
+    "resources/**"
+  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {

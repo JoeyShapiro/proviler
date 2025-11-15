@@ -10,6 +10,7 @@ class State {
 	process: pty.IPty | null = null;
 	startedAt: number = Date.now();
 	usageLog: Usage[] = [];
+	resources: vscode.Uri = vscode.Uri.file('');
 
 	constructor(name: string, pid: number, paused: boolean) {
 		this.name = name;
@@ -44,6 +45,7 @@ var provider: CanvasViewProvider | null = null;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	state.resources = vscode.Uri.joinPath(context.extensionUri, 'resources');
 	provider = new CanvasViewProvider(context.extensionUri);
 
     context.subscriptions.push(
@@ -59,11 +61,11 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.debug.onDidStartDebugSession((session) => {
             console.debug('Started:', session);
 
-			state.process = pty.spawn('/Users/oniichan/Documents/Code/proviler/target/release/proviler', ['-u', '-p', String(state.pid)], {
+			state.process = pty.spawn(state.resources + '/proviler', ['-u', '-p', String(state.pid)], {
 				name: 'xterm-color',
 				cols: 80,
 				rows: 30,
-				cwd: vscode.workspace.rootPath || process.cwd(),
+				cwd: state.resources.fsPath,
 				env: process.env
 			});
 
@@ -200,10 +202,13 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
     ) {
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this._extensionUri]
+            localResourceRoots: [state.resources]
         };
+		const scriptUri = webviewView.webview.asWebviewUri(
+            vscode.Uri.joinPath(state.resources, 'chart.js')
+        );
 
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview, scriptUri);
 		this._webviewView = webviewView;
     }
 
@@ -215,14 +220,14 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 		this._webviewView.webview.postMessage(message);
 	}
 
-    private _getHtmlForWebview(webview: vscode.Webview) {
+    private _getHtmlForWebview(webview: vscode.Webview, scriptUri: vscode.Uri) {
 		// TODO https://github.com/leeoniya/uPlot?tab=readme-ov-file#performance
         return `<!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+			<script src="${scriptUri}"></script>
             <style>
                 html, body {
                     padding: 0;

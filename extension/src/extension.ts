@@ -66,7 +66,6 @@ export function activate(context: vscode.ExtensionContext) {
 				env: process.env
 			});
 
-			// TODO paused doesnt seem to work rght. still doesnt update properly
 			state.process.onData((data) => {
 				let cols = data.split(' ');
 				if (cols.length < 3) {
@@ -120,6 +119,7 @@ class GoDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory 
 
 class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
     onDidSendMessage(message: any): void {
+		console.log('Sent message:', message);
         // Check for stopped event
         if (message.type === 'event') {
 			switch (message.event) {
@@ -127,7 +127,7 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 					this.onPause(message.body);
 					break;
 				case 'continued':
-					this.onResume(message.body);
+					this.onStep(message.body);
 					break;
 				case 'process':
 					this.onProcess(message.body);
@@ -135,8 +135,20 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 				default:
 					break;
 			}
-        }
+        } else if (message.type === 'response') {
+			switch (message.command) {
+				case 'continue':
+					this.onContinue(message.body);
+					break;
+				default:
+					break;
+			}
+		}
     }
+
+	onWillReceiveMessage(message: any): void {
+		console.debug('Will receive message:', message);
+	}
 
 	private onProcess(body: any): void {
 		console.debug(`Process - Name: ${body.name}, System ID: ${body.systemProcessId}`);
@@ -146,14 +158,26 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 
     private onPause(body: any): void {
 		console.debug(`Paused - Reason: ${body.reason}, Thread: ${body.threadId}`);
+
+		if (state.paused) {
+			return;
+		}
+
 		state.paused = true;
 		state.process?.write(' ');
     }
 
-    private onResume(body: any): void {
-        console.debug('Resumed execution', body);
+	private onContinue(body: any): void {
+		if (!state.paused || body.success === false) {
+			return;
+		}
+
 		state.paused = false;
 		state.process?.write(' ');
+	}
+
+    private onStep(body: any): void {
+		state.process?.write('s');
     }
 }
 

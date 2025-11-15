@@ -8,6 +8,7 @@ class State {
 	pid: number;
 	paused: boolean;
 	process: pty.IPty | null = null;
+	startedAt: number = Date.now();
 	usageLog: Usage[] = [];
 
 	constructor(name: string, pid: number, paused: boolean) {
@@ -19,7 +20,7 @@ class State {
 	log(timestamp: number, cpu: number, memory: number) {
 		this.usageLog.push(new Usage(timestamp, cpu, memory));
 
-		if (this.usageLog.length > 10) {
+		if (this.usageLog.length > 30) {
 			this.usageLog.shift();
 		}
 	}
@@ -73,7 +74,12 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
-				provider!.post({ command: 'update', cpu: state.usageLog.map(u => u.cpu), memory: state.usageLog.map(u => u.memory)});
+				provider!.post({
+					command: 'update',
+					labels: state.usageLog.map(u => (u.timestamp - state.startedAt)/1000),
+					cpu: state.usageLog.map(u => u.cpu),
+					memory: state.usageLog.map(u => u.memory)
+				});
 			});
 
 			state.process.onExit(({ exitCode, signal }) => {});
@@ -229,46 +235,61 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                 canvas {
                     display: block;
                     width: 100%;
-                    height: 100%;
                 }
             </style>
         </head>
         <body>
-            <canvas id="myCanvas"></canvas>
+            <canvas id="canvasCpu"></canvas>
+            <canvas id="canvasMem"></canvas>
             <script>
                 const vscode = acquireVsCodeApi();
-                const canvas = document.getElementById('myCanvas');
-                const ctx = canvas.getContext('2d');
-				const cpu = [];
-				const memory = [];
+                const canvasCpu = document.getElementById('canvasCpu');
+				const canvasMem = document.getElementById('canvasMem');
 
-				let chart = new Chart(canvas, {
+				const options = {
+					maintainAspectRatio: false,
+					responsive: true,
+					plugins: {
+						title: {
+							display: true,
+							text: '${state.name}'
+						}
+					},
+					scales: {
+						y: {
+							beginAtZero: true
+						}
+					}
+				};
+
+				let chartCpu = new Chart(canvasCpu, {
 					type: 'line',
 					data: {
 						labels: [],
 						datasets: [{
 							label: 'CPU Usage (%)',
-							data: cpu,
+							data: [],
 							borderColor: 'rgb(75, 192, 192)',
 							backgroundColor: 'rgba(75, 192, 192, 0.2)',
 							tension: 0.1
 						}]
 					},
-					options: {
-						maintainAspectRatio: false,
-						responsive: true,
-						plugins: {
-							title: {
-								display: true,
-								text: '${state.name}'
-							}
-						},
-						scales: {
-							y: {
-								beginAtZero: true
-							}
-						}
-					}
+					options: options
+				});
+
+				let chartMem = new Chart(canvasMem, {
+					type: 'line',
+					data: {
+						labels: [],
+						datasets: [{
+							label: 'Memory Usage (MiB)',
+							data: [],
+							borderColor: 'rgb(75, 192, 192)',
+							backgroundColor: 'rgba(75, 192, 192, 0.2)',
+							tension: 0.1
+						}]
+					},
+					options: options
 				});
 
 				window.addEventListener('message', event => {
@@ -276,9 +297,13 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 
                     switch (message.command) {
                         case 'update':
-							chart.data.labels = message.cpu.map((_, i) => i + 1);
-							chart.data.datasets[0].data = message.cpu;
-							chart.update();
+							chartCpu.data.labels = message.labels;
+							chartCpu.data.datasets[0].data = message.cpu;
+							chartCpu.update();
+
+							chartMem.data.labels = message.labels;
+							chartMem.data.datasets[0].data = message.memory;
+							chartMem.update();
                             break;
                     }
                 });

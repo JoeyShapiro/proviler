@@ -232,15 +232,22 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
                     margin: 0;
 					height: 100%;
                 }
+
+                div {
+                    width: 100%;
+                    height: 50%;
+                }
+
                 canvas {
                     display: block;
+					height: 100%;
                     width: 100%;
                 }
             </style>
         </head>
         <body>
-            <canvas id="canvasCpu"></canvas>
-            <canvas id="canvasMem"></canvas>
+            <div><canvas id="canvasCpu"></canvas></div>
+            <div><canvas id="canvasMem"></canvas></div>
             <script>
                 const vscode = acquireVsCodeApi();
                 const canvasCpu = document.getElementById('canvasCpu');

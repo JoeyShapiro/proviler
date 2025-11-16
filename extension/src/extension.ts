@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.debug.onDidStartDebugSession((session) => {
             console.debug('Started:', session);
 
-			state.process = pty.spawn(state.resources + '/proviler', ['-u', '-p', String(state.pid)], {
+			state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid)], {
 				name: 'xterm-color',
 				cols: 80,
 				rows: 30,
@@ -75,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 					return;
 				}
 
-				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]));
+				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]) / (1 << 20));
 				provider!.post({
 					command: 'update',
 					name: state.name,

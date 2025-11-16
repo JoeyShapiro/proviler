@@ -97,7 +97,7 @@ fn main() {
                     format!("{} B", vmem_mr)
                 }
             } else {
-                process.virtual_memory().to_string()
+                process.memory().to_string()
             };
 
             println!(

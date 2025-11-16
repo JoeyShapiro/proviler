@@ -270,6 +270,15 @@ export class CanvasViewProvider implements vscode.WebviewViewProvider {
 					scales: {
 						y: {
 							beginAtZero: true
+						},
+						x: {
+							type: 'linear',
+							ticks: {
+								stepSize: 1, // Show tick every 1 second
+								callback: function(value) {
+									return value + 's'; // Add 's' suffix
+								}
+							}
 						}
 					}
 				};

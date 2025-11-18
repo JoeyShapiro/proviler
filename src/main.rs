@@ -16,7 +16,9 @@ struct Flags {
     interval: u64,
 
     /// PID of the process to monitor
-    #[arg(short, long)]
+    /// cant seem to use -1. but hitting u32::max seems impossible
+    /// doing an optional might be better, and cleaner. but could get messier and more complex
+    #[arg(short, long, default_value_t = u32::MAX)]
     pid: u32,
 
     /// Enable verbose mode
@@ -30,6 +32,10 @@ struct Flags {
     /// Header row
     #[arg(short = 't', long)]
     header: bool,
+
+    /// Watch for a program with a given name
+    #[arg(short = 'w', long)]
+    watch: String,
 }
 
 fn main() {
@@ -37,10 +43,21 @@ fn main() {
 
     let mut sys = System::new_all();
     let interval = Duration::from_millis(flags.interval);
-    let pid = sysinfo::Pid::from_u32(flags.pid);
+    let mut pid = sysinfo::Pid::from_u32(flags.pid);
     let now = std::time::SystemTime::now;
     let mut paused = false;
     let mut step = false;
+
+
+    // TODO handle watching pid 0.
+    let should_watch = if !flags.watch.is_empty() && flags.pid == 0 {
+        true
+    } else if flags.watch.is_empty() && flags.pid != 0 {
+        false
+    } else {
+        eprintln!("Either --pid or --watch must be specified, but not both.");
+        return;
+    };
 
     if flags.header {
         print!("timestamp_ms cpu_usage mem");
@@ -109,6 +126,23 @@ fn main() {
                 process.cpu_usage(),
                 vmem
             );
+        } else if should_watch {
+            // TODO maybe reset pid so i dont have an overlap
+            // TODO use regex
+            let procs: Vec<_> = sys.processes_by_name(std::ffi::OsStr::new(&flags.watch)).collect();
+            // TODO handle multiple processes with the same name and watch all of them with pid in output
+            if procs.is_empty() {
+                if flags.verbose {
+                    println!("Waiting for process '{}'...", flags.watch);
+                }
+            } else if procs.len() > 1 {
+                todo!("Multiple processes with the same name are not supported yet");
+            } else {
+                if flags.verbose {
+                    println!("Found process '{}' with PID {}", flags.watch, procs[0].pid());
+                }
+                pid = procs[0].pid();
+            }
         } else {
             eprintln!("Process not found\r");
             break;

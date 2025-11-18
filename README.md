@@ -33,3 +33,6 @@ This is just like the old Visual Studio Usage graphs.
 ### Extension
 
 ## Build
+```sh
+just build
+```

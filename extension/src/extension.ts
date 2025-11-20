@@ -115,6 +115,9 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.debug.registerDebugAdapterTrackerFactory('go', trackerFactory)
     );
+	context.subscriptions.push(
+        vscode.debug.registerDebugAdapterTrackerFactory('cppdbg', trackerFactory)
+    );
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated

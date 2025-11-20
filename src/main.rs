@@ -34,7 +34,7 @@ struct Flags {
     header: bool,
 
     /// Watch for a program with a given name
-    #[arg(short = 'w', long)]
+    #[arg(short = 'w', long, default_value_t = String::new())]
     watch: String,
 }
 
@@ -50,9 +50,9 @@ fn main() {
 
 
     // TODO handle watching pid 0.
-    let should_watch = if !flags.watch.is_empty() && flags.pid == 0 {
+    let should_watch = if !flags.watch.is_empty() && flags.pid == u32::MAX {
         true
-    } else if flags.watch.is_empty() && flags.pid != 0 {
+    } else if flags.watch.is_empty() && flags.pid != u32::MAX {
         false
     } else {
         eprintln!("Either --pid or --watch must be specified, but not both.");

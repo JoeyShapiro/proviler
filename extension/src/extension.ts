@@ -61,32 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.debug.onDidStartDebugSession((session) => {
             console.debug('Started:', session);
 
-			state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid)], {
-				name: 'xterm-color',
-				cols: 80,
-				rows: 30,
-				cwd: state.resources.fsPath,
-				env: process.env
-			});
-
-			state.process.onData((data) => {
-				let cols = data.split(' ');
-				if (cols.length < 3) {
-					return;
-				}
-
-				state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]) / (1 << 20));
-				provider!.post({
-					command: 'update',
-					name: state.name,
-					pid: state.pid,
-					labels: state.usageLog.map(u => (u.timestamp - state.startedAt)/1000),
-					cpu: state.usageLog.map(u => u.cpu),
-					memory: state.usageLog.map(u => u.memory)
-				});
-			});
-
-			state.process.onExit(({ exitCode, signal }) => {});
+			// languages: go
+			trySpawn();
         })
     );
 
@@ -162,6 +138,9 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 		console.debug(`Process - Name: ${body.name}, System ID: ${body.systemProcessId}`);
 		state.name = body.name;
 		state.pid = body.systemProcessId;
+
+		// langueages: cppdbg
+		trySpawn();
 	}
 
     private onPause(body: any): void {
@@ -187,6 +166,39 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
     private onStep(body: any): void {
 		state.process?.write('s');
     }
+}
+
+function trySpawn() {
+	if (!state.pid || state.process) {
+		return;
+	}
+
+	state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid)], {
+		name: 'xterm-color',
+		cols: 80,
+		rows: 30,
+		cwd: state.resources.fsPath,
+		env: process.env
+	});
+
+	state.process.onData((data) => {
+		let cols = data.split(' ');
+		if (cols.length < 3) {
+			return;
+		}
+
+		state.log(parseInt(cols[0]), parseFloat(cols[1]), parseFloat(cols[2]) / (1 << 20));
+		provider!.post({
+			command: 'update',
+			name: state.name,
+			pid: state.pid,
+			labels: state.usageLog.map(u => (u.timestamp - state.startedAt)/1000),
+			cpu: state.usageLog.map(u => u.cpu),
+			memory: state.usageLog.map(u => u.memory)
+		});
+	});
+
+	state.process.onExit(({ exitCode, signal }) => {});
 }
 
 // This method is called when your extension is deactivated

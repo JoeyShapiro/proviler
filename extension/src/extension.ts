@@ -112,7 +112,6 @@ class GoDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory 
 
 class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
     onDidSendMessage(message: any): void {
-		console.debug('Debug Adapter Message:', message);
         // Check for stopped event
         if (message.type === 'event') {
 			switch (message.event) {

@@ -64,7 +64,7 @@ fn main() {
         if flags.human {
             print!(" mem_units");
         }
-        println!();
+        println!("\r");
     }
 
     enable_raw_mode().unwrap();
@@ -133,13 +133,13 @@ fn main() {
             // TODO handle multiple processes with the same name and watch all of them with pid in output
             if procs.is_empty() {
                 if flags.verbose {
-                    println!("Waiting for process '{}'...", flags.watch);
+                    println!("Waiting for process '{}'...\r", flags.watch);
                 }
             } else if procs.len() > 1 {
                 todo!("Multiple processes with the same name are not supported yet");
             } else {
                 if flags.verbose {
-                    println!("Found process '{}' with PID {}", flags.watch, procs[0].pid());
+                    println!("Found process '{}' with PID {}\r", flags.watch, procs[0].pid());
                 }
                 pid = procs[0].pid();
             }

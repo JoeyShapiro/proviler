@@ -94,6 +94,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
         vscode.debug.registerDebugAdapterTrackerFactory('cppdbg', trackerFactory)
     );
+	// TODO CodeLLDB does not work. it is too old and does not support onProcess
+	context.subscriptions.push(
+        vscode.debug.registerDebugAdapterTrackerFactory('lldb', trackerFactory)
+    );
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -108,6 +112,7 @@ class GoDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory 
 
 class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
     onDidSendMessage(message: any): void {
+		console.debug('Debug Adapter Message:', message);
         // Check for stopped event
         if (message.type === 'event') {
 			switch (message.event) {
@@ -120,6 +125,16 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 				case 'process':
 					this.onProcess(message.body);
 					break;
+				case 'output': // special case for CodeLLDB (Rust)
+					if (message.body.output.startsWith('Launched process ')) {
+						let pidMatch = message.body.output.match(/Launched process (\d+)/);
+						let nameMatch = message.body.output.match(/from '(.*)'/);
+						if (pidMatch && pidMatch[1] && nameMatch && nameMatch[1]) {
+							state.pid = parseInt(pidMatch[1]);
+							state.name = nameMatch[1];
+							trySpawn();
+						}
+					}
 				default:
 					break;
 			}

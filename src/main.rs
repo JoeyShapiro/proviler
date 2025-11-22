@@ -44,7 +44,6 @@ fn main() {
     let mut sys = System::new_all();
     let interval = Duration::from_millis(flags.interval);
     let mut pid = sysinfo::Pid::from_u32(flags.pid);
-    let now = std::time::SystemTime::now;
     let mut paused = false;
     let mut step = false;
 
@@ -117,12 +116,15 @@ fn main() {
                 process.memory().to_string()
             };
 
-            println!(
-                "{} {:.2} {}\r",
-                now()
+            let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
-                    .as_millis(),
+                    .as_millis()
+                    .to_string();
+
+            println!(
+                "{} {:.2} {}\r",
+                now,
                 process.cpu_usage(),
                 vmem
             );

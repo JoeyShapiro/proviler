@@ -11,6 +11,8 @@ class State {
 	startedAt: number = Date.now();
 	usageLog: Usage[] = [];
 	resources: vscode.Uri = vscode.Uri.file('');
+	logSize: number = 30;
+	interval: number = 1000;
 
 	constructor(name: string, pid: number, paused: boolean) {
 		this.name = name;
@@ -21,7 +23,7 @@ class State {
 	log(timestamp: number, cpu: number, memory: number) {
 		this.usageLog.push(new Usage(timestamp, cpu, memory));
 
-		if (this.usageLog.length > 30) {
+		if (this.usageLog.length > state.logSize) {
 			this.usageLog.shift();
 		}
 	}
@@ -48,12 +50,24 @@ export function activate(context: vscode.ExtensionContext) {
 	state.resources = vscode.Uri.joinPath(context.extensionUri, 'resources');
 	provider = new CanvasViewProvider(context.extensionUri);
 
+	const config = vscode.workspace.getConfiguration('proviler');
+	state.logSize = config.get('logSize', 30);
+	state.interval = config.get('interval', 1000);
+
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             CanvasViewProvider.viewType,
             provider
         )
     );
+
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(e => {
+		const config = vscode.workspace.getConfiguration('proviler');
+		state.logSize = config.get('logSize', 30);
+		state.interval = config.get('interval', 1000);
+		})
+	);
 
 	// debugger hooks
     // Before debug session starts (can modify configuration)
@@ -190,7 +204,7 @@ function trySpawn() {
 		return;
 	}
 
-	state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid)], {
+	state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid), '-i', String(state.interval)], {
 		name: 'xterm-color',
 		cols: 80,
 		rows: 30,

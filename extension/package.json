@@ -31,6 +31,22 @@
           "icon": "resources/profiler.svg"
         }
       ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "proviler",
+      "properties": {
+        "proviler.interval": {
+          "type": "number",
+          "default": 1024,
+          "description": "Size of the buffer (KiB) to use when reading files"
+        },
+        "proviler.logSize": {
+          "type": "number",
+          "default": 500,
+          "description": "Debounce time in milliseconds"
+        }
+      }
     }
   },
   "scripts": {

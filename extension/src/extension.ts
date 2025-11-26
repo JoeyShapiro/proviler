@@ -85,11 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
             console.debug('Terminated:', session.name);
 			if (state.process) {
 				state.process.write('q'); // send quit command
-				state.process.kill();
-				state.process = null;
 			}
-
-			state = new State('', 0, false);
         })
     );
 
@@ -200,9 +196,13 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 }
 
 function trySpawn() {
-	if (!state.pid || state.process) {
+	if (state.pid !== 0 && state.process) {
 		return;
 	}
+
+	// reset state here.
+	state.usageLog = [];
+	state.startedAt = Date.now();
 
 	state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid), '-i', String(state.interval)], {
 		name: 'xterm-color',
@@ -229,7 +229,9 @@ function trySpawn() {
 		});
 	});
 
-	state.process.onExit(({ exitCode, signal }) => {});
+	state.process.onExit(({ exitCode, signal }) => {
+		state.process = null;
+	});
 }
 
 // This method is called when your extension is deactivated

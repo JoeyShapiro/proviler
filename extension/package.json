@@ -2,16 +2,16 @@
   "name": "proviler",
   "displayName": "proviler",
   "description": "Add a debug profiler graph like in Visual Studio",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JoeyShapiro/proviler"
+  },
   "engines": {
     "vscode": "^1.105.0"
   },
   "categories": [
     "Other"
-  ],
-  "files": [
-    "out/**",
-    "resources/**"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",

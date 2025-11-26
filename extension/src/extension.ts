@@ -74,9 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.debug.onDidStartDebugSession((session) => {
             console.debug('Started:', session);
-
-			// languages: go
-			trySpawn();
         })
     );
 
@@ -166,7 +163,6 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 		state.name = body.name;
 		state.pid = body.systemProcessId;
 
-		// langueages: cppdbg
 		trySpawn();
 	}
 
@@ -203,6 +199,7 @@ function trySpawn() {
 	// reset state here.
 	state.usageLog = [];
 	state.startedAt = Date.now();
+	state.paused = false;
 
 	state.process = pty.spawn(state.resources.fsPath + '/proviler', ['-p', String(state.pid), '-i', String(state.interval)], {
 		name: 'xterm-color',

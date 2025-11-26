@@ -56,7 +56,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "postinstall": "electron-rebuild -f -w node-pty"
+    "postinstall": "electron-rebuild -f -w node-pty --version=39.2.0"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",
@@ -67,6 +67,7 @@
     "@typescript-eslint/parser": "^8.45.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^9.36.0",
     "typescript": "^5.9.3"
   },

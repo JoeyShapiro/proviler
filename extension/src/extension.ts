@@ -63,9 +63,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(e => {
-		const config = vscode.workspace.getConfiguration('proviler');
-		state.logSize = config.get('logSize', 30);
-		state.interval = config.get('interval', 1000);
+			const config = vscode.workspace.getConfiguration('proviler');
+			state.logSize = config.get('logSize', 30);
+			state.interval = config.get('interval', 1000);
 		})
 	);
 

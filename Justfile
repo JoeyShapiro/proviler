@@ -9,4 +9,3 @@ build:
 
 testfiles:
     gcc testfiles/main.c a.out
-    # TODO put name and full path on hover

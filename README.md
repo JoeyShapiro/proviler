@@ -37,6 +37,8 @@ This is just like the old Visual Studio Usage graphs.
 - support regex in name
 - support multiple programs and use pid in table
 - support watching children
+- safety for if the program cant stop
+- export logs
 
 ## Usage
 This program can be used as a standalone executable or as a VSCode extension.
@@ -98,8 +100,10 @@ timestamp_ms cpu_usage mem mem_units
 ```
 
 ### Extension
-The Graph is updated every second and stores the past 30 ticks.
+The Graph is updated every second and stores the past 30 ticks (Can be changed in the settings).
 It can stop and continue with pauses and steps.
+<img src="https://github.com/JoeyShapiro/proviler/raw/main/demo/golang.gif">
+<img src="https://github.com/JoeyShapiro/proviler/raw/main/demo/c-and-restart.gif">
 
 ## Build
 ```sh

@@ -178,7 +178,7 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 		}
 
 		state.paused = true;
-		state.process?.write(' ');
+		state.process?.write('p');
     }
 
 	private onContinue(body: any): void {
@@ -187,7 +187,7 @@ class GoDebugAdapterTracker implements vscode.DebugAdapterTracker {
 		}
 
 		state.paused = false;
-		state.process?.write(' ');
+		state.process?.write('r');
 	}
 
     private onStep(body: any): void {

@@ -85,6 +85,18 @@ fn main() {
                             }
                         }
                     }
+                    KeyCode::Char('p') => {
+                        paused = true;
+                        if flags.verbose {
+                            println!("paused\r");
+                        }
+                    }
+                    KeyCode::Char('r') => {
+                        paused = false;
+                        if flags.verbose {
+                            println!("resumed\r");
+                        }
+                    }
                     KeyCode::Char('s') => step = true,
                     KeyCode::Char(ch) => println!("unknown command: '{}'\r", ch),
                     _ => {}

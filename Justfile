@@ -3,6 +3,7 @@ build:
 
     cargo build --release
     cp target/release/proviler extension/resources
+    cp README.md extension
 
     [ -f "extension/resources/chart.js" ] || curl https://cdn.jsdelivr.net/npm/chart.js -o extension/resources/chart.js
     cd extension && npm run compile
